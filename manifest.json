@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Dynamic New Tab",
+  "version": "1.0.0",
+  "description": "A customizable new tab page with dynamic wallpapers and shortcuts.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
