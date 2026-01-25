@@ -1,17 +1,21 @@
 <template>
-  <div class="search-widget animate-fade-in">
+  <div class="search-widget animate-fade-in" v-click-outside="closeSuggestions">
     <!-- Engine Logo -->
     <div class="engine-selector" @click="rotateEngine">
       <div v-html="currentEngine.svg" class="engine-logo"></div>
     </div>
 
     <!-- Search Input -->
-    <div class="search-bar-container">
+    <div class="search-bar-container" :class="{ 'has-suggestions': showSuggestions }">
       <BaseInput
         v-model="query"
         type="text"
         :placeholder="`使用 ${currentEngine.name} 搜索...`"
-        @keydown.enter="performSearch"
+        @keydown.enter="handleEnter"
+        @keydown.up.prevent="navigateSuggestions(-1)"
+        @keydown.down.prevent="navigateSuggestions(1)"
+        @keydown.esc="closeSuggestions"
+        @focus="handleFocus"
         autofocus
         class="custom-search-input"
         spellcheck="false"
@@ -24,16 +28,58 @@
            </button>
         </template>
       </BaseInput>
+
+      <!-- Suggestions Dropdown -->
+      <transition name="dropdown-slide">
+        <div v-if="showSuggestions" class="suggestions-dropdown">
+           <div 
+               v-for="(item, index) in suggestions" 
+               :key="index" 
+               class="suggestion-item"
+               :class="{ active: index === activeSuggestionIndex }"
+               @click="selectSuggestion(item)"
+               @mouseenter="activeSuggestionIndex = index"
+           >
+               <svg class="suggestion-icon" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+                 <path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/>
+               </svg>
+               <span class="suggestion-text">{{ item }}</span>
+           </div>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import BaseInput from './ui/BaseInput.vue';
+
+// Custom Directive: v-click-outside
+const vClickOutside = {
+  mounted(el, binding) {
+    el.clickOutsideEvent = function(event) {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value(event);
+      }
+    };
+    document.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.removeEventListener('click', el.clickOutsideEvent);
+  },
+};
 
 const query = ref('');
 const engineIndex = ref(0);
+const suggestions = ref([]);
+const activeSuggestionIndex = ref(-1);
+const isFocused = ref(false);
+let debounceTimer = null;
+
+const showSuggestions = computed(() => {
+    return isFocused.value && suggestions.value.length > 0;
+});
 
 // Basic SVGs for logos
 const engines = [
@@ -65,6 +111,82 @@ function performSearch() {
   window.location.href = currentEngine.value.url + encodeURIComponent(query.value);
 }
 
+function handleEnter() {
+  if (activeSuggestionIndex.value >= 0 && activeSuggestionIndex.value < suggestions.value.length) {
+    query.value = suggestions.value[activeSuggestionIndex.value];
+    performSearch();
+  } else {
+    performSearch();
+  }
+}
+
+function selectSuggestion(item) {
+  query.value = item;
+  performSearch();
+}
+
+function navigateSuggestions(step) {
+  if (!suggestions.value.length) return;
+  activeSuggestionIndex.value += step;
+  if (activeSuggestionIndex.value < -1) activeSuggestionIndex.value = suggestions.value.length - 1;
+  if (activeSuggestionIndex.value >= suggestions.value.length) activeSuggestionIndex.value = -1;
+  
+  // Optionally update query preview in input
+  if (activeSuggestionIndex.value !== -1) {
+      // query.value = suggestions.value[activeSuggestionIndex.value]; // This might be annoying if user wants to keep typing
+  }
+}
+
+function closeSuggestions() {
+    isFocused.value = false;
+    activeSuggestionIndex.value = -1;
+}
+
+function handleFocus() {
+    isFocused.value = true;
+    if (query.value && suggestions.value.length === 0) {
+        fetchSuggestions(query.value);
+    }
+}
+
+function fetchSuggestions(text) {
+    if (!text || !text.trim()) {
+        suggestions.value = [];
+        return;
+    }
+
+    const callbackName = 'bing_sugg_' + Math.floor(Math.random() * 100000);
+    window[callbackName] = (data) => {
+        try {
+            if (data && data.AS && data.AS.Results && data.AS.Results.length > 0) {
+                suggestions.value = data.AS.Results[0].Suggests.map(s => s.Txt);
+            } else {
+                suggestions.value = [];
+            }
+        } catch (e) {
+            suggestions.value = [];
+        }
+        document.body.removeChild(script);
+        delete window[callbackName];
+    };
+
+    const script = document.createElement('script');
+    script.src = `https://api.bing.com/qsonhs.aspx?type=cb&q=${encodeURIComponent(text)}&cb=${callbackName}`;
+    script.onerror = () => {
+        suggestions.value = [];
+        document.body.removeChild(script);
+        delete window[callbackName];
+    };
+    document.body.appendChild(script);
+}
+
+watch(query, (newVal) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        fetchSuggestions(newVal);
+    }, 200);
+});
+
 function loadEngine() {
   const saved = localStorage.getItem('defaultEngine');
   if (saved !== null) {
@@ -92,6 +214,7 @@ onUnmounted(() => {
   max-width: 600px;
   margin: 0 auto;
   z-index: 10;
+  position: relative; /* Context for absolute dropdown */
 }
 
 .engine-selector {
@@ -118,14 +241,33 @@ onUnmounted(() => {
   box-shadow: var(--md-sys-elevation-level2);
   border-radius: 28px;
   background: var(--md-sys-color-surface);
+  transition: border-radius 0.2s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
+
+.search-bar-container.has-suggestions {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: var(--md-sys-elevation-level3);
+}
+
+.search-bar-container.has-suggestions :deep(.base-input-wrapper) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.search-bar-container.has-suggestions :deep(.base-input-wrapper.focused) {
+  box-shadow: none;
+  border-color: transparent;
+} 
 
 /* Override BaseInput generic styles for the specific search bar needs */
 :deep(.base-input-wrapper) {
    padding: 8px 16px 8px 24px;
    background: var(--md-sys-color-surface);
    border-radius: 28px;
-   transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1);
+   transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), border-radius 0.2s cubic-bezier(0.2, 0, 0, 1);
+   position: relative;
+   z-index: 25;
 }
 
 :deep(.base-input-wrapper.focused) {
@@ -151,5 +293,61 @@ onUnmounted(() => {
 
 .search-icon-btn:hover {
     background-color: var(--md-sys-color-surface-variant);
+}
+
+.suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 0;
+  background-color: var(--md-sys-color-surface, #1e1e1e);
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  box-shadow: var(--md-sys-elevation-level3);
+  overflow: hidden;
+  z-index: 20;
+  padding: 8px 0;
+  border-top: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.suggestion-item {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: var(--md-sys-color-on-surface, #e3e3e3);
+}
+
+.suggestion-item:hover, .suggestion-item.active {
+  background-color: var(--md-sys-color-surface-container-high, rgba(255, 255, 255, 0.1));
+}
+
+.suggestion-icon {
+  color: var(--md-sys-color-on-surface-variant, #c4c4c4);
+  opacity: 0.7;
+}
+
+.suggestion-text {
+  font-size: 16px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdown-slide-enter-active,
+.dropdown-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-slide-enter-from,
+.dropdown-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>
