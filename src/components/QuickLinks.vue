@@ -21,7 +21,13 @@
       >
         <div class="link-content">
             <div class="link-icon-wrapper">
+            <Icon 
+                v-if="link.icon" 
+                :icon="link.icon" 
+                class="link-icon" 
+            />
             <img 
+                v-else
                 :src="getFavicon(link.url)" 
                 class="link-icon" 
                 alt=""
@@ -58,7 +64,13 @@
         >
           <div class="context-header">
             <div class="context-icon-wrapper">
+                <Icon 
+                    v-if="tempLink.icon" 
+                    :icon="tempLink.icon" 
+                    class="context-large-icon" 
+                />
                 <img 
+                    v-else
                     :src="getFavicon(tempLink.url)" 
                     class="context-large-icon" 
                     @error="handleImageError"
@@ -70,7 +82,10 @@
             <BaseInput v-model="tempLink.url" placeholder="网址" />
           </div>
           <div class="context-footer">
-            <div class="context-delete-btn" @click="deleteLink(contextMenu.index)">
+            <div class="context-btn" @click="openEditModal(contextMenu.index)" title="编辑">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+            </div>
+            <div class="context-btn delete" @click="deleteLink(contextMenu.index)" title="删除">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
             </div>
           </div>
@@ -87,8 +102,9 @@
             </div>
             <div class="form-group">
                 <label>网址</label>
-                <BaseInput v-model="newLink.url" placeholder="https://" @keyup.enter="handleModalSubmit" />
+                <BaseInput v-model="newLink.url" placeholder="https://" />
             </div>
+            <IconSelector v-model="newLink.icon" />
         </div>
         <template #footer>
             <BaseButton variant="text" @click="closeModal">取消</BaseButton>
@@ -102,10 +118,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { Icon } from '@iconify/vue';
 import BaseCard from './ui/BaseCard.vue';
 import BaseModal from './ui/BaseModal.vue';
 import BaseInput from './ui/BaseInput.vue';
 import BaseButton from './ui/BaseButton.vue';
+import IconSelector from './ui/IconSelector.vue';
 
 // Helper for unique IDs
 const generateId = () => '_' + Math.random().toString(36).substr(2, 9);
@@ -198,7 +216,7 @@ function closeContextMenu(event) {
 // Edit / Delete / Add
 function openAddModal() {
   editMode.value = false;
-  newLink.value = { title: '', url: '' };
+  newLink.value = { title: '', url: '', icon: '' };
   openModal();
 }
 
@@ -238,7 +256,8 @@ function updateLink() {
    links.value[editIndex.value] = {
      id: currentId,
      title: newLink.value.title || url,
-     url: url
+     url: url,
+     icon: newLink.value.icon
    };
    
    saveLinks();
@@ -282,7 +301,8 @@ function addLink() {
   links.value.push({
     id: generateId(),
     title: newLink.value.title || url,
-    url: url
+    url: url,
+    icon: newLink.value.icon
   });
   saveLinks();
   closeModal();
@@ -515,24 +535,34 @@ onUnmounted(() => {
   justify-content: center;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 12px;
+  gap: 16px;
 }
 
-.context-delete-btn {
+.context-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ff5252;
+  color: var(--md-sys-color-on-surface);
   cursor: pointer;
   transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.context-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.context-btn.delete {
+  color: #ff5252;
   background: rgba(255, 82, 82, 0.1);
 }
 
-.context-delete-btn:hover {
+.context-btn.delete:hover {
   background-color: rgba(255, 82, 82, 0.2);
-  transform: scale(1.1);
 }
 
 /* List Transitions */
