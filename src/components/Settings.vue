@@ -35,26 +35,20 @@
                 <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
               </svg>
             </div>
-            <div 
-              :class="['color-option', 'custom-color', { active: settings.themeColor === 'custom' }]"
-              @click="openColorPicker"
+            <ColorPicker
+              v-model="customColor"
+              :isActive="settings.themeColor === 'custom'"
+              @change="updateCustomColor"
             >
-              <input 
-                ref="colorPicker"
-                type="color" 
-                v-model="customColor"
-                @input="updateCustomColor"
-                style="display: none"
-              />
-              <div class="custom-color-display" :style="{ backgroundColor: customColor }">
+              <template #icon>
                 <svg v-if="settings.themeColor === 'custom'" viewBox="0 0 24 24" width="20" height="20" fill="white">
                   <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
                 </svg>
                 <svg v-else viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                   <path d="M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28 0-.5.22-.5.5 0 .12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5 0 0 1 12 22zm0-18c-4.41 0-8 3.59-8 8s3.59 8 8 8c.28 0 .5-.22.5-.5a.54.54 0 0 0-.14-.35c-.41-.46-.63-1.05-.63-1.65a2.5 2.5 0 0 1 2.5-2.5H16c2.21 0 4-1.79 4-4 0-3.86-3.59-7-8-7z"/><circle cx="6.5" cy="11.5" r="1.5"/><circle cx="9.5" cy="7.5" r="1.5"/><circle cx="14.5" cy="7.5" r="1.5"/><circle cx="17.5" cy="11.5" r="1.5"/>
                 </svg>
-              </div>
-            </div>
+              </template>
+            </ColorPicker>
           </div>
         </div>
 
@@ -75,16 +69,11 @@
         <h3>搜索</h3>
         <div class="setting-item">
           <label class="setting-label-text">默认搜索引擎</label>
-          <div class="select-wrapper">
-            <select v-model="settings.defaultEngine" @change="updateDefaultEngine" class="setting-select">
-              <option value="0">Google</option>
-              <option value="1">Bing</option>
-              <option value="2">Baidu</option>
-            </select>
-            <svg class="select-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-               <path d="M7 10l5 5 5-5z"/>
-            </svg>
-          </div>
+          <BaseSelect
+            v-model="settings.defaultEngine"
+            :options="searchEngines"
+            @change="updateDefaultEngine"
+          />
         </div>
       </section>
 
@@ -103,6 +92,8 @@ import { ref, onMounted, watch } from 'vue';
 import BaseModal from './ui/BaseModal.vue';
 import BaseButton from './ui/BaseButton.vue';
 import BaseSwitch from './ui/BaseSwitch.vue';
+import BaseSelect from './ui/BaseSelect.vue';
+import ColorPicker from './ui/ColorPicker.vue';
 
 const props = defineProps({
   isOpen: Boolean
@@ -110,13 +101,18 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'theme-change']);
 
-const colorPicker = ref(null);
 const customColor = ref('#6750A4');
 
 const themeModes = [
   { value: 'auto', label: '自动' },
   { value: 'light', label: '浅色' },
   { value: 'dark', label: '深色' }
+];
+
+const searchEngines = [
+  { label: 'Google', value: '0' },
+  { label: 'Bing', value: '1' },
+  { label: 'Baidu', value: '2' }
 ];
 
 const presetColors = [
@@ -192,10 +188,6 @@ function updateDefaultEngine() {
   localStorage.setItem('defaultEngine', settings.value.defaultEngine);
   saveSettings();
   window.dispatchEvent(new CustomEvent('engine-changed'));
-}
-
-function openColorPicker() {
-  colorPicker.value?.click();
 }
 
 function applyThemeColor(colorValue) {
@@ -333,56 +325,6 @@ defineExpose({ loadSettings, settings, applyThemeColor, presetColors });
 .color-option.active {
   border-color: var(--md-sys-color-on-surface);
   transform: scale(1.1);
-}
-
-.custom-color {
-  background: linear-gradient(135deg, 
-    #ff0000 0%, #ff7f00 16.67%, #ffff00 33.33%, 
-    #00ff00 50%, #0000ff 66.67%, #4b0082 83.33%, #9400d3 100%);
-}
-
-.custom-color-display {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-}
-
-/* Custom Select Style */
-.select-wrapper {
-    position: relative;
-    width: 100%;
-}
-
-.setting-select {
-  width: 100%;
-  padding: 12px 16px;
-  border-radius: 12px;
-  border: 1px solid var(--md-sys-color-outline-variant);
-  background: var(--md-sys-color-surface-variant);
-  color: var(--md-sys-color-on-surface);
-  font-size: 16px;
-  cursor: pointer;
-  appearance: none; /* Remove default arrow */
-  transition: all 0.2s;
-}
-
-.setting-select:focus {
-    outline: none;
-    border-color: var(--md-sys-color-primary);
-    box-shadow: 0 0 0 1px var(--md-sys-color-primary);
-}
-
-.select-icon {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none;
-    color: var(--md-sys-color-on-surface-variant);
 }
 
 .about-text {
