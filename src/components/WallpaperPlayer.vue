@@ -37,52 +37,140 @@ const fileInput = ref(null);
 
 const isVideo = computed(() => mimeType.value.startsWith('video/'));
 
-// 从图片或视频帧提取主色调
+// 从图片或视频帧提取多种主要颜色
 function extractColors(mediaElement) {
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   
   // 设置较小的尺寸以提高性能
-  canvas.width = 100;
-  canvas.height = 100;
+  canvas.width = 150;
+  canvas.height = 150;
   
   try {
     ctx.drawImage(mediaElement, 0, 0, canvas.width, canvas.height);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     
-    // 简单的颜色统计
-    let r = 0, g = 0, b = 0;
-    const pixelCount = data.length / 4;
+    // 使用K-means聚类提取主要颜色
+    const colors = extractDominantColors(data, 5);
     
-    for (let i = 0; i < data.length; i += 4) {
-      r += data[i];
-      g += data[i + 1];
-      b += data[i + 2];
-    }
-    
-    r = Math.floor(r / pixelCount);
-    g = Math.floor(g / pixelCount);
-    b = Math.floor(b / pixelCount);
-    
-    // 应用颜色到CSS变量
-    applyThemeColors(r, g, b);
+    // 应用颜色
+    applyThemeColors(colors);
   } catch (err) {
     console.error('颜色提取失败:', err);
   }
 }
 
-function applyThemeColors(r, g, b) {
-  // 转换为HEX并emit
-  const hexColor = '#' + [r, g, b].map(x => {
-    const hex = x.toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
-  }).join('');
+// K-means聚类提取主要颜色
+function extractDominantColors(data, k) {
+  const pixels = [];
   
-  emit('color-extracted', hexColor);
+  // 采样像素，跳过一些像素以提高性能
+  for (let i = 0; i < data.length; i += 16) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const a = data[i + 3];
+    
+    // 跳过透明或接近黑白的像素
+    if (a < 128) continue;
+    const brightness = (r + g + b) / 3;
+    if (brightness < 30 || brightness > 225) continue;
+    
+    pixels.push([r, g, b]);
+  }
+  
+  if (pixels.length === 0) {
+    return [{ r: 103, g: 80, b: 164 }];
+  }
+  
+  // 简化的K-means算法
+  const maxIterations = 10;
+  let centroids = [];
+  
+  // 随机初始化质心
+  for (let i = 0; i < k; i++) {
+    const randomPixel = pixels[Math.floor(Math.random() * pixels.length)];
+    centroids.push([...randomPixel]);
+  }
+  
+  for (let iter = 0; iter < maxIterations; iter++) {
+    const clusters = Array(k).fill(null).map(() => []);
+    
+    // 分配像素到最近的质心
+    pixels.forEach(pixel => {
+      let minDist = Infinity;
+      let closestCentroid = 0;
+      
+      centroids.forEach((centroid, idx) => {
+        const dist = Math.sqrt(
+          Math.pow(pixel[0] - centroid[0], 2) +
+          Math.pow(pixel[1] - centroid[1], 2) +
+          Math.pow(pixel[2] - centroid[2], 2)
+        );
+        if (dist < minDist) {
+          minDist = dist;
+          closestCentroid = idx;
+        }
+      });
+      
+      clusters[closestCentroid].push(pixel);
+    });
+    
+    // 更新质心
+    centroids = clusters.map(cluster => {
+      if (cluster.length === 0) {
+        return centroids[0];
+      }
+      const sum = cluster.reduce((acc, pixel) => [
+        acc[0] + pixel[0],
+        acc[1] + pixel[1],
+        acc[2] + pixel[2]
+      ], [0, 0, 0]);
+      
+      return [
+        Math.round(sum[0] / cluster.length),
+        Math.round(sum[1] / cluster.length),
+        Math.round(sum[2] / cluster.length)
+      ];
+    });
+  }
+  
+  // 增强颜色饱和度
+  return centroids.map(centroid => {
+    const [r, g, b] = centroid;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const saturation = max === 0 ? 0 : (max - min) / max;
+    
+    // 增强饱和度较低的颜色
+    if (saturation < 0.3) {
+      const avg = (r + g + b) / 3;
+      const boost = 1.5;
+      return {
+        r: Math.min(255, Math.round(avg + (r - avg) * boost)),
+        g: Math.min(255, Math.round(avg + (g - avg) * boost)),
+        b: Math.min(255, Math.round(avg + (b - avg) * boost))
+      };
+    }
+    
+    return { r, g, b };
+  });
+}
+
+function applyThemeColors(colors) {
+  // 转换为HEX并保存多个颜色
+  const hexColors = colors.map(({ r, g, b }) => {
+    return '#' + [r, g, b].map(x => {
+      const hex = x.toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+  });
+  
+  emit('color-extracted', hexColors);
   
   // 保存到localStorage
-  localStorage.setItem('extractedThemeColor', hexColor);
+  localStorage.setItem('extractedThemeColors', JSON.stringify(hexColors));
 }
 
 const dbName = 'wallpaper-db';

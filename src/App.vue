@@ -55,31 +55,30 @@ function closeSettings() {
   settingsOpen.value = false;
 }
 
-function handleColorExtracted(color) {
-  // 保存提取的颜色
-  localStorage.setItem('extractedThemeColor', color);
+function handleColorExtracted(colors) {
+  // colors 现在是一个数组
+  if (!Array.isArray(colors) || colors.length === 0) return;
   
-  // 如果设置了自动提取颜色，则应用该颜色
-  const settings = localStorage.getItem('appSettings');
-  if (settings) {
-    const parsedSettings = JSON.parse(settings);
-    if (parsedSettings.autoExtractColor) {
-      // 更新设置中的提取颜色并应用
-      setTimeout(() => {
-        if (settingsRef.value) {
-          const extracted = settingsRef.value.presetColors.find(c => c.name === 'extracted');
-          if (extracted) {
-            extracted.value = color;
-          }
-          if (parsedSettings.themeColor === 'extracted' || parsedSettings.autoExtractColor) {
-            settingsRef.value.applyThemeColor(color);
-            parsedSettings.themeColor = 'extracted';
-            localStorage.setItem('appSettings', JSON.stringify(parsedSettings));
-          }
+  // 保存提取的颜色数组
+  localStorage.setItem('extractedThemeColors', JSON.stringify(colors));
+  
+  // 更新设置组件中的提取颜色
+  setTimeout(() => {
+    if (settingsRef.value) {
+      settingsRef.value.loadExtractedColors();
+      
+      // 如果设置了自动提取颜色，则应用第一个颜色
+      const settings = localStorage.getItem('appSettings');
+      if (settings) {
+        const parsedSettings = JSON.parse(settings);
+        if (parsedSettings.autoExtractColor) {
+          settingsRef.value.applyThemeColor(colors[0]);
+          parsedSettings.themeColor = 'extracted-0';
+          localStorage.setItem('appSettings', JSON.stringify(parsedSettings));
         }
-      }, 100);
+      }
     }
-  }
+  }, 100);
 }
 </script>
 

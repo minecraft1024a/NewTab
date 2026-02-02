@@ -21,7 +21,7 @@
         </div>
 
         <div class="setting-item">
-          <label class="setting-label-text">主题色</label>
+          <label class="setting-label-text">默认颜色</label>
           <div class="color-options">
             <div 
               v-for="color in presetColors" 
@@ -49,6 +49,24 @@
                 </svg>
               </template>
             </ColorPicker>
+          </div>
+        </div>
+
+        <div class="setting-item" v-if="extractedColors.length > 0">
+          <label class="setting-label-text">壁纸提取颜色</label>
+          <div class="color-options">
+            <div 
+              v-for="(color, index) in extractedColors" 
+              :key="'extracted-' + index"
+              :class="['color-option', { active: settings.themeColor === 'extracted-' + index }]"
+              :style="{ backgroundColor: color }"
+              @click="updateThemeColor('extracted-' + index, color)"
+              :title="'提取颜色 ' + (index + 1)"
+            >
+              <svg v-if="settings.themeColor === 'extracted-' + index" viewBox="0 0 24 24" width="20" height="20" fill="white">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -117,6 +135,7 @@ const props = defineProps({
 const emit = defineEmits(['close', 'theme-change']);
 
 const customColor = ref('#6750A4');
+const extractedColors = ref([]);
 
 const themeModes = [
   { value: 'auto', label: '自动' },
@@ -137,8 +156,7 @@ const presetColors = [
   { name: 'orange', label: '橙色', value: '#F57C00' },
   { name: 'red', label: '红色', value: '#D32F2F' },
   { name: 'pink', label: '粉色', value: '#C2185B' },
-  { name: 'teal', label: '青色', value: '#00796B' },
-  { name: 'extracted', label: '提取颜色', value: '#6750A4' }
+  { name: 'teal', label: '青色', value: '#00796B' }
 ];
 
 const settings = ref({
@@ -162,11 +180,17 @@ function loadSettings() {
   }
   
   // 加载提取的颜色
-  const extractedColor = localStorage.getItem('extractedThemeColor');
-  if (extractedColor) {
-    const extracted = presetColors.find(c => c.name === 'extracted');
-    if (extracted) {
-      extracted.value = extractedColor;
+  loadExtractedColors();
+}
+
+function loadExtractedColors() {
+  const savedColors = localStorage.getItem('extractedThemeColors');
+  if (savedColors) {
+    try {
+      extractedColors.value = JSON.parse(savedColors);
+    } catch (e) {
+      console.error('Failed to parse extracted colors:', e);
+      extractedColors.value = [];
     }
   }
 }
@@ -204,6 +228,15 @@ function updateThemeColor(name, color) {
   settings.value.themeColor = name;
   saveSettings();
   applyThemeColor(color);
+}
+
+function updateExtractedColors(colors) {
+  extractedColors.value = colors;
+  
+  // 如果开启了自动提取颜色，自动应用第一个提取的颜色
+  if (settings.value.autoExtractColor && colors.length > 0) {
+    updateThemeColor('extracted-0', colors[0]);
+  }
 }
 
 function updateCustomColor() {
@@ -287,7 +320,7 @@ onMounted(() => {
   applyThemeMode();
 });
 
-defineExpose({ loadSettings, settings, applyThemeColor, applyThemeMode, presetColors });
+defineExpose({ loadSettings, settings, applyThemeColor, applyThemeMode, presetColors, updateExtractedColors, loadExtractedColors });
 </script>
 
 <style scoped>

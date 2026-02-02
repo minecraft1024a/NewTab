@@ -206,7 +206,7 @@ onUnmounted(() => {
 .icon-selector {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 16px;
 }
 
 .selector-header {
@@ -217,182 +217,293 @@ onUnmounted(() => {
 
 .selector-header label {
     font-size: 14px;
-    font-weight: 500;
-    color: var(--md-sys-color-on-surface-variant);
+    font-weight: 600;
+    color: var(--md-sys-color-on-surface);
+    letter-spacing: 0.1px;
 }
 
 .tabs {
     display: flex;
     background: var(--md-sys-color-surface-container-high);
-    border-radius: 8px;
-    padding: 2px;
+    border-radius: 10px;
+    padding: 3px;
     gap: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .tabs button {
     background: transparent;
     border: none;
-    padding: 4px 12px;
-    font-size: 12px;
+    padding: 6px 16px;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--md-sys-color-on-surface-variant);
     cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
+    border-radius: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.tabs button:hover:not(.active) {
+    background: var(--md-sys-color-surface-container-highest);
+    color: var(--md-sys-color-on-surface);
 }
 
 .tabs button.active {
     background: var(--md-sys-color-primary);
     color: var(--md-sys-color-on-primary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
 }
 
 .custom-icon-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    background: var(--md-sys-color-surface);
-    padding: 12px;
-    border-radius: 8px;
+    gap: 16px;
+    background: var(--md-sys-color-surface-container-low);
+    padding: 16px;
+    border-radius: 12px;
     border: 1px solid var(--md-sys-color-outline-variant);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .input-wrapper {
     display: flex;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
 }
 
 .icon-preview {
-    font-size: 24px;
+    font-size: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: var(--md-sys-color-primary);
-    width: 32px;
-    height: 32px;
-    background: var(--md-sys-color-surface-container-highest);
-    border-radius: 4px;
+    width: 48px;
+    height: 48px;
+    background: var(--md-sys-color-primary-container);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: iconPulse 0.5s ease-out;
+}
+
+@keyframes iconPulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.icon-preview:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .presets {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
 }
 
 .presets-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 0 2px;
 }
 
 .presets-label {
-    font-size: 11px;
-    color: var(--md-sys-color-on-surface-variant);
-    opacity: 0.7;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--md-sys-color-primary);
+    opacity: 0.9;
+    letter-spacing: 0.5px;
 }
 
 .view-toggle {
     display: flex;
     background: var(--md-sys-color-surface-container-high);
-    border-radius: 6px;
-    padding: 2px;
+    border-radius: 8px;
+    padding: 3px;
     gap: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .view-toggle button {
     background: transparent;
     border: none;
-    padding: 3px 10px;
+    padding: 4px 12px;
     font-size: 11px;
+    font-weight: 500;
     color: var(--md-sys-color-on-surface-variant);
     cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s;
+    border-radius: 6px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.view-toggle button:hover:not(.active) {
+    background: var(--md-sys-color-surface-container-highest);
+    color: var(--md-sys-color-on-surface);
 }
 
 .view-toggle button.active {
     background: var(--md-sys-color-primary);
     color: var(--md-sys-color-on-primary);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .presets-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
-    gap: 6px;
-    max-height: 240px;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 8px;
+    max-height: 260px;
     overflow-y: auto;
-    padding-right: 4px;
+    padding: 4px;
+    margin: -4px;
 }
 
 /* Custom scrollbar for presets */
 .presets-grid::-webkit-scrollbar {
-    width: 4px;
+    width: 6px;
+}
+.presets-grid::-webkit-scrollbar-track {
+    background: var(--md-sys-color-surface-container);
+    border-radius: 3px;
 }
 .presets-grid::-webkit-scrollbar-thumb {
-    background: var(--md-sys-color-outline-variant);
-    border-radius: 2px;
+    background: var(--md-sys-color-primary);
+    border-radius: 3px;
+    opacity: 0.6;
+}
+.presets-grid::-webkit-scrollbar-thumb:hover {
+    background: var(--md-sys-color-primary);
+    opacity: 1;
 }
 
 .preset-btn {
-    width: 32px;
-    height: 32px;
-    border: 1px solid transparent;
+    width: 36px;
+    height: 36px;
+    border: 2px solid transparent;
     background: var(--md-sys-color-surface-container-high);
-    border-radius: 6px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 20px;
     color: var(--md-sys-color-on-surface-variant);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.preset-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--md-sys-color-primary);
+    opacity: 0;
+    transition: opacity 0.25s;
 }
 
 .preset-btn:hover {
     background: var(--md-sys-color-surface-container-highest);
-    color: var(--md-sys-color-on-surface);
+    color: var(--md-sys-color-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.preset-btn:hover::before {
+    opacity: 0.08;
 }
 
 .preset-btn.active {
     background: var(--md-sys-color-primary-container);
-    color: var(--md-sys-color-on-primary-container);
+    color: var(--md-sys-color-primary);
     border-color: var(--md-sys-color-primary);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    transform: scale(1.05);
+}
+
+.preset-btn.active::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--md-sys-color-primary) 0%, transparent 100%);
+    opacity: 0.1;
+    pointer-events: none;
 }
 
 .pagination {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    padding-top: 8px;
+    gap: 16px;
+    padding-top: 12px;
+    margin-top: 4px;
     border-top: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .pagination button {
     background: var(--md-sys-color-surface-container-high);
     border: none;
-    padding: 6px 12px;
-    font-size: 12px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 500;
     color: var(--md-sys-color-on-surface);
     cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.2s;
+    border-radius: 8px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .pagination button:hover:not(:disabled) {
     background: var(--md-sys-color-primary);
     color: var(--md-sys-color-on-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.pagination button:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
 .pagination button:disabled {
-    opacity: 0.3;
+    opacity: 0.4;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 .page-info {
-    font-size: 12px;
-    color: var(--md-sys-color-on-surface-variant);
-    min-width: 60px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--md-sys-color-primary);
+    min-width: 70px;
     text-align: center;
+    padding: 4px 8px;
+    background: var(--md-sys-color-primary-container);
+    border-radius: 6px;
 }
 </style>
