@@ -20,7 +20,7 @@
     "newtab": "index.html"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' ; connect-src 'self' https://api.bing.com; object-src 'self'",
+    "extension_pages": "script-src 'self' ; connect-src 'self' https://api.bing.com https://api.iconify.design; object-src 'self'",
     "sandbox": "sandbox allow-scripts; script-src 'self' https://api.bing.com;"
   }
 }
