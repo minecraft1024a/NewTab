@@ -209,7 +209,7 @@ onUnmounted(() => {
   /* top/left set by JS */
   max-height: 240px;
   overflow-y: auto;
-  background: var(--md-sys-color-surface-container-high, #2b2b2b);
+  background: var(--md-sys-color-surface-container-high);
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   z-index: 9999;

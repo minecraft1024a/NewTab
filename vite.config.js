@@ -14,5 +14,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true
+  },
+  optimizeDeps: {
+    include: ['@iconify-json/mdi', '@iconify-json/material-symbols', '@iconify-json/fluent']
   }
 })

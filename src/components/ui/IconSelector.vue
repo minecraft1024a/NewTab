@@ -23,9 +23,8 @@
     <div v-if="modelValue" class="custom-icon-panel">
         <div class="input-wrapper">
              <BaseInput 
-                :modelValue="modelValue" 
-                @update:modelValue="updateIcon" 
-                placeholder="例如: mdi:github" 
+                v-model="searchQuery" 
+                placeholder="搜索图标名称..." 
              />
              <div class="icon-preview" v-if="modelValue">
                 <Icon :icon="modelValue" />
@@ -33,19 +32,59 @@
         </div>
         
         <div class="presets">
-            <div class="presets-label">常用图标:</div>
+            <div class="presets-header">
+              <div class="presets-label">
+                {{ searchQuery ? `找到 ${filteredIcons.length} 个图标` : (showAllIcons ? `所有图标 (共 ${allIconsData.length} 个)` : '常用图标') }}
+              </div>
+              <div class="view-toggle" v-if="!searchQuery">
+                <button 
+                  type="button"
+                  :class="{ active: !showAllIcons }"
+                  @click="showAllIcons = false"
+                >
+                  常用
+                </button>
+                <button 
+                  type="button"
+                  :class="{ active: showAllIcons }"
+                  @click="handleShowAll"
+                >
+                  全部
+                </button>
+              </div>
+            </div>
+            
             <div class="presets-grid">
                 <button 
-                    v-for="icon in commonIcons" 
-                    :key="icon"
+                    v-for="icon in displayIcons" 
+                    :key="icon.name"
                     class="preset-btn"
-                    :class="{ active: modelValue === icon }"
-                    @click="updateIcon(icon)"
+                    :class="{ active: modelValue === icon.name }"
+                    @click="updateIcon(icon.name)"
                     type="button"
-                    :title="icon"
+                    :title="icon.label"
                 >
-                    <Icon :icon="icon" />
+                    <Icon :icon="icon.name" />
                 </button>
+            </div>
+            
+            <!-- 分页控制 -->
+            <div class="pagination" v-if="(showAllIcons && !searchQuery) || (searchQuery && filteredIcons.length > 100)">
+              <button 
+                type="button"
+                :disabled="currentPage === 1"
+                @click="currentPage--"
+              >
+                上一页
+              </button>
+              <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+              <button 
+                type="button"
+                :disabled="currentPage === totalPages"
+                @click="currentPage++"
+              >
+                下一页
+              </button>
             </div>
         </div>
     </div>
@@ -53,8 +92,10 @@
 </template>
 
 <script setup>
+import { ref, computed, watch } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseInput from './BaseInput.vue';
+import { getAllIcons, searchIcons, commonIcons as presetIcons } from '@/data/mdi-icons.js';
 
 const props = defineProps({
   modelValue: {
@@ -65,16 +106,56 @@ const props = defineProps({
 
 const emit = defineEmits(['update:modelValue']);
 
-const commonIcons = [
-  'mdi:home', 'mdi:google', 'mdi:youtube', 'mdi:github', 
-  'mdi:twitter', 'mdi:instagram', 'mdi:facebook', 'mdi:linkedin',
-  'mdi:twitch', 'mdi:discord', 'mdi:reddit', 'mdi:spotify',
-  'mdi:netflix', 'mdi:amazon', 'mdi:shopping', 'mdi:cart',
-  'mdi:email', 'mdi:calendar', 'mdi:clock', 'mdi:map',
-  'mdi:cloud', 'mdi:folder', 'mdi:file', 'mdi:cog',
-  'mdi:code-tags', 'mdi:laptop', 'mdi:controller', 'mdi:school',
-  'mdi:bank', 'mdi:chart-line'
-];
+const searchQuery = ref('');
+const showAllIcons = ref(false);
+const currentPage = ref(1);
+const pageSize = 100;
+
+// 所有图标数据
+const allIconsData = getAllIcons();
+
+// 常用图标转换为对象格式
+const commonIconsList = presetIcons.map(name => ({
+  name,
+  label: name.replace(/^[^:]+:/, '')
+}));
+
+// 过滤后的图标
+const filteredIcons = computed(() => {
+  if (searchQuery.value) {
+    return searchIcons(searchQuery.value);
+  }
+  return showAllIcons.value ? allIconsData : commonIconsList;
+});
+
+// 总页数
+const totalPages = computed(() => {
+  const total = filteredIcons.value.length;
+  if (searchQuery.value || showAllIcons.value) {
+    return Math.ceil(total / pageSize);
+  }
+  return 1;
+});
+
+// 当前页显示的图标
+const displayIcons = computed(() => {
+  const icons = filteredIcons.value;
+  
+  // 如果是常用图标且没有搜索，显示全部
+  if (!searchQuery.value && !showAllIcons.value) {
+    return icons;
+  }
+  
+  // 否则进行分页
+  const start = (currentPage.value - 1) * pageSize;
+  const end = start + pageSize;
+  return icons.slice(start, end);
+});
+
+// 监听搜索或视图切换，重置页码
+watch([searchQuery, showAllIcons], () => {
+  currentPage.value = 1;
+});
 
 function updateIcon(val) {
   emit('update:modelValue', val);
@@ -82,12 +163,20 @@ function updateIcon(val) {
 
 function clearIcon() {
   emit('update:modelValue', '');
+  searchQuery.value = '';
+  showAllIcons.value = false;
+  currentPage.value = 1;
 }
 
 function enableCustom() {
   if (!props.modelValue) {
     emit('update:modelValue', 'mdi:earth');
   }
+}
+
+function handleShowAll() {
+  showAllIcons.value = true;
+  currentPage.value = 1;
 }
 </script>
 
@@ -141,7 +230,7 @@ function enableCustom() {
     background: var(--md-sys-color-surface-container);
     padding: 12px;
     border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
+    border: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .input-wrapper {
@@ -158,7 +247,7 @@ function enableCustom() {
     color: var(--md-sys-color-primary);
     width: 32px;
     height: 32px;
-    background: rgba(255,255,255,0.05);
+    background: var(--md-sys-color-surface-container-highest);
     border-radius: 4px;
 }
 
@@ -168,17 +257,47 @@ function enableCustom() {
     gap: 8px;
 }
 
+.presets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .presets-label {
     font-size: 11px;
     color: var(--md-sys-color-on-surface-variant);
     opacity: 0.7;
 }
 
+.view-toggle {
+    display: flex;
+    background: var(--md-sys-color-surface-container-high);
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.view-toggle button {
+    background: transparent;
+    border: none;
+    padding: 3px 10px;
+    font-size: 11px;
+    color: var(--md-sys-color-on-surface-variant);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.view-toggle button.active {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+}
+
 .presets-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(32px, 1fr));
     gap: 6px;
-    max-height: 120px;
+    max-height: 240px;
     overflow-y: auto;
     padding-right: 4px;
 }
@@ -188,7 +307,7 @@ function enableCustom() {
     width: 4px;
 }
 .presets-grid::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.1);
+    background: var(--md-sys-color-outline-variant);
     border-radius: 2px;
 }
 
@@ -196,7 +315,7 @@ function enableCustom() {
     width: 32px;
     height: 32px;
     border: 1px solid transparent;
-    background: rgba(255,255,255,0.03);
+    background: var(--md-sys-color-surface-container-high);
     border-radius: 6px;
     display: flex;
     align-items: center;
@@ -208,7 +327,7 @@ function enableCustom() {
 }
 
 .preset-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: var(--md-sys-color-surface-container-highest);
     color: var(--md-sys-color-on-surface);
 }
 
@@ -216,5 +335,42 @@ function enableCustom() {
     background: var(--md-sys-color-primary-container);
     color: var(--md-sys-color-on-primary-container);
     border-color: var(--md-sys-color-primary);
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.pagination button {
+    background: var(--md-sys-color-surface-container-high);
+    border: none;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--md-sys-color-on-surface);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.pagination button:hover:not(:disabled) {
+    background: var(--md-sys-color-primary);
+    color: var(--md-sys-color-on-primary);
+}
+
+.pagination button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.page-info {
+    font-size: 12px;
+    color: var(--md-sys-color-on-surface-variant);
+    min-width: 60px;
+    text-align: center;
 }
 </style>

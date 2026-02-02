@@ -9,6 +9,9 @@
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
+    "@iconify-json/mdi": "^1.1.0",
+    "@iconify-json/material-symbols": "^1.1.0",
+    "@iconify-json/fluent": "^1.1.0",
     "idb": "^8.0.3",
     "vue": "^3.4.0"
   },

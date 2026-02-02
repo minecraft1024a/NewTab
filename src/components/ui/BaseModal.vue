@@ -52,8 +52,8 @@ const close = () => emit('close');
 }
 
 .modal-container {
-  background-color: var(--md-sys-color-surface, #141218);
-  color: var(--md-sys-color-on-surface, #e6e1e5);
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
   border-radius: 28px;
   width: 90%;
   max-width: 500px;

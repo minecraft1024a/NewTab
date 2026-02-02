@@ -163,6 +163,25 @@ function saveSettings() {
 function updateThemeMode(mode) {
   settings.value.themeMode = mode;
   saveSettings();
+  applyThemeMode();
+}
+
+function applyThemeMode() {
+  const root = document.documentElement;
+  const isDark = settings.value.themeMode === 'dark' || 
+                 (settings.value.themeMode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  
+  // 切换主题类
+  if (isDark) {
+    root.classList.remove('theme-light');
+  } else {
+    root.classList.add('theme-light');
+  }
+  
+  // 重新应用当前主题色
+  const currentColor = settings.value.themeColor === 'custom' ? customColor.value : 
+                      presetColors.find(c => c.name === settings.value.themeColor)?.value || '#6750A4';
+  applyThemeColor(currentColor);
 }
 
 function updateThemeColor(name, color) {
@@ -227,23 +246,27 @@ function close() {
 
 // 监听系统主题变化
 watch(() => settings.value.themeMode, () => {
-  // 无论切换到什么模式，都重新计算并应用主题
-  // 获取当前应该使用的主题色 (custom or preset)
-  const currentColor = settings.value.themeColor === 'custom' ? customColor.value : 
-                      presetColors.find(c => c.name === settings.value.themeColor)?.value || '#6750A4';
-  applyThemeColor(currentColor);
+  applyThemeMode();
 });
+
+// 监听系统偏好变化
+if (window.matchMedia) {
+  const darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  darkModeQuery.addEventListener('change', () => {
+    if (settings.value.themeMode === 'auto') {
+      applyThemeMode();
+    }
+  });
+}
 
 onMounted(() => {
   loadSettings();
   
-  // 应用初始主题
-  const currentColor = settings.value.themeColor === 'custom' ? customColor.value : 
-                      presetColors.find(c => c.name === settings.value.themeColor)?.value || '#6750A4';
-  applyThemeColor(currentColor);
+  // 应用初始主题模式和颜色
+  applyThemeMode();
 });
 
-defineExpose({ loadSettings, settings, applyThemeColor, presetColors });
+defineExpose({ loadSettings, settings, applyThemeColor, applyThemeMode, presetColors });
 </script>
 
 <style scoped>

@@ -369,7 +369,7 @@ onUnmounted(() => {
 
 .link-card:hover {
   transform: translateY(-4px);
-  background-color: var(--md-sys-color-surface-container-high, rgba(30, 30, 30, 0.6)) !important;
+  /* background-color handled by BaseCard */
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   z-index: 10;
 }
@@ -389,7 +389,7 @@ onUnmounted(() => {
   justify-content: center;
   position: relative;
   text-decoration: none;
-  background-color: var(--md-sys-color-surface-container, rgba(0, 0, 0, 0.4)) !important; 
+  /* background-color handled by BaseCard */
   border-radius: 20px !important;
   transition: transform 0.2s cubic-bezier(0.2, 0, 0.2, 1), 
               background-color 0.2s ease, 

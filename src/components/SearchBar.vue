@@ -149,35 +149,44 @@ function handleFocus() {
     }
 }
 
-function fetchSuggestions(text) {
+async function fetchSuggestions(text) {
     if (!text || !text.trim()) {
         suggestions.value = [];
         return;
     }
 
-    const callbackName = 'bing_sugg_' + Math.floor(Math.random() * 100000);
-    window[callbackName] = (data) => {
-        try {
-            if (data && data.AS && data.AS.Results && data.AS.Results.length > 0) {
-                suggestions.value = data.AS.Results[0].Suggests.map(s => s.Txt);
-            } else {
-                suggestions.value = [];
-            }
-        } catch (e) {
+    try {
+        // 使用fetch API代替JSONP
+        const callbackName = 'bing_sugg_' + Math.floor(Math.random() * 100000);
+        
+        // 创建临时回调函数来处理JSONP响应
+        const response = await new Promise((resolve, reject) => {
+            window[callbackName] = (data) => {
+                delete window[callbackName];
+                resolve(data);
+            };
+
+            const script = document.createElement('script');
+            script.src = `https://api.bing.com/qsonhs.aspx?type=cb&q=${encodeURIComponent(text)}&cb=${callbackName}`;
+            script.onerror = () => {
+                delete window[callbackName];
+                document.body.removeChild(script);
+                reject(new Error('Failed to load suggestions'));
+            };
+            script.onload = () => {
+                document.body.removeChild(script);
+            };
+            document.body.appendChild(script);
+        });
+
+        if (response && response.AS && response.AS.Results && response.AS.Results.length > 0) {
+            suggestions.value = response.AS.Results[0].Suggests.map(s => s.Txt);
+        } else {
             suggestions.value = [];
         }
-        document.body.removeChild(script);
-        delete window[callbackName];
-    };
-
-    const script = document.createElement('script');
-    script.src = `https://api.bing.com/qsonhs.aspx?type=cb&q=${encodeURIComponent(text)}&cb=${callbackName}`;
-    script.onerror = () => {
+    } catch (e) {
         suggestions.value = [];
-        document.body.removeChild(script);
-        delete window[callbackName];
-    };
-    document.body.appendChild(script);
+    }
 }
 
 watch(query, (newVal) => {
