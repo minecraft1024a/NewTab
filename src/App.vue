@@ -1,6 +1,8 @@
 <template>
   <div class="app-container">
-    <LoadingScreen ref="loadingRef" />
+    
+    <!-- 加载遮罩层 -->
+    <div class="loading-overlay" :class="{ 'fade-out': isContentReady }"></div>
     
     <WallpaperPlayer ref="wallpaperRef" @color-extracted="handleColorExtracted" />
     
@@ -34,17 +36,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, defineAsyncComponent } from 'vue';
-import LoadingScreen from './components/LoadingScreen.vue';
+import { ref, onMounted, nextTick } from 'vue';
 import WallpaperPlayer from './components/WallpaperPlayer.vue';
 import SearchBar from './components/SearchBar.vue';
 import QuickLinks from './components/QuickLinks.vue';
 import BaseButton from './components/ui/BaseButton.vue';
-
-// 懒加载Settings组件
-const Settings = defineAsyncComponent(() =>
-  import('./components/Settings.vue')
-);
+import Settings from './components/Settings.vue';
 
 const loadingRef = ref(null);
 const wallpaperRef = ref(null);
@@ -53,11 +50,26 @@ const settingsOpen = ref(false);
 const isContentReady = ref(false);
 
 // 初始化加载
-onMounted(() => {
-  // 立即显示内容
-  isContentReady.value = true;
+onMounted(async () => {
+  // 等待 DOM 更新
+  await nextTick();
   
-  // 下一帧隐藏加载屏幕
+  // 并行初始化设置和壁纸
+  const initPromises = [];
+  
+  // 初始化设置组件
+  if (settingsRef.value) {
+    settingsRef.value.loadSettings();
+    settingsRef.value.loadExtractedColors();
+    settingsRef.value.applyThemeMode();
+  }
+  
+  // 壁纸加载（WallpaperPlayer 在 onMounted 中自动加载）
+  // 等待一小段时间确保壁纸和主题都已加载
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // 显示内容
+  isContentReady.value = true;
   requestAnimationFrame(() => {
     loadingRef.value?.hide();
   });
@@ -151,5 +163,21 @@ function handleColorExtracted(colors) {
 .icon-btn-glass:hover {
     background-color: var(--md-sys-color-surface-container-high, rgba(30, 30, 30, 0.6));
     border-color: rgba(255,255,255,0.2);
+}
+
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #141218;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.loading-overlay.fade-out {
+  opacity: 0;
 }
 </style>
