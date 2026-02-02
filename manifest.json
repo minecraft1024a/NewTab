@@ -3,14 +3,24 @@
   "name": "Dynamic New Tab",
   "version": "1.0.0",
   "description": "A customizable new tab page with dynamic wallpapers and shortcuts.",
+  "icons": {
+    "32": "icon/image32.png",
+    "64": "icon/image64.png",
+    "128": "icon/image128.png",
+    "512": "icon/image512.png"
+  },
   "permissions": [
     "storage",
     "unlimitedStorage"
+  ],
+  "host_permissions": [
+    "https://api.bing.com/*"
   ],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; connect-src 'self' https://api.bing.com; object-src 'self'"
+    "extension_pages": "script-src 'self' ; connect-src 'self' https://api.bing.com; object-src 'self'",
+    "sandbox": "sandbox allow-scripts; script-src 'self' https://api.bing.com;"
   }
 }

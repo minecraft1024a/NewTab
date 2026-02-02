@@ -156,35 +156,37 @@ async function fetchSuggestions(text) {
     }
 
     try {
-        // 使用fetch API代替JSONP
-        const callbackName = 'bing_sugg_' + Math.floor(Math.random() * 100000);
+        // 使用 CORS 代理来访问 Bing API
+        // 由于 Chrome Extension 可以跨域请求，我们直接使用 fetch
+        const url = `https://api.bing.com/qsonhs.aspx?type=cb&q=${encodeURIComponent(text)}`;
         
-        // 创建临时回调函数来处理JSONP响应
-        const response = await new Promise((resolve, reject) => {
-            window[callbackName] = (data) => {
-                delete window[callbackName];
-                resolve(data);
-            };
-
-            const script = document.createElement('script');
-            script.src = `https://api.bing.com/qsonhs.aspx?type=cb&q=${encodeURIComponent(text)}&cb=${callbackName}`;
-            script.onerror = () => {
-                delete window[callbackName];
-                document.body.removeChild(script);
-                reject(new Error('Failed to load suggestions'));
-            };
-            script.onload = () => {
-                document.body.removeChild(script);
-            };
-            document.body.appendChild(script);
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Accept': '*/*'
+            }
         });
-
-        if (response && response.AS && response.AS.Results && response.AS.Results.length > 0) {
-            suggestions.value = response.AS.Results[0].Suggests.map(s => s.Txt);
+        
+        const text_data = await response.text();
+        console.log('Bing Suggestion Response:', text_data);
+        
+        // 解析 JSONP 响应 
+        // Bing 返回格式类似: if(typeof callback === 'function') callback({...});
+        // 我们需要提取大括号内的 JSON
+        const jsonMatch = text_data.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            const data = JSON.parse(jsonMatch[0]);
+            
+            if (data && data.AS && data.AS.Results && data.AS.Results.length > 0) {
+                suggestions.value = data.AS.Results[0].Suggests.map(s => s.Txt);
+            } else {
+                suggestions.value = [];
+            }
         } else {
             suggestions.value = [];
         }
     } catch (e) {
+        console.error('Failed to fetch suggestions:', e);
         suggestions.value = [];
     }
 }
@@ -272,7 +274,7 @@ onUnmounted(() => {
 }
 /* Override BaseInput generic styles for the specific search bar needs */
 :deep(.base-input-wrapper) {
-   padding: 8px 16px 8px 24px;
+   padding: 8px 24px 8px 24px;
    background: var(--md-sys-color-surface);
    border-radius: 28px;
    transition: box-shadow 0.2s cubic-bezier(0.2, 0, 0, 1), border-radius 0.2s cubic-bezier(0.2, 0, 0, 1);
@@ -284,7 +286,7 @@ onUnmounted(() => {
     box-shadow: var(--md-sys-elevation-level3);
     background-color: var(--md-sys-color-surface);
     border: 2px solid var(--md-sys-color-primary);
-    padding: 7px 15px 7px 23px;
+    padding: 7px 23px 7px 23px;
 }
 
 :deep(.base-input-field) {
@@ -321,14 +323,14 @@ onUnmounted(() => {
   box-shadow: var(--md-sys-elevation-level3);
   overflow: hidden;
   z-index: 20;
-  padding: 8px 0;
+  padding: 0;
   border: 2px solid var(--md-sys-color-primary);
   border-top: none;
   box-sizing: border-box;
 }
 
 .suggestion-item {
-  padding: 10px 16px;
+  padding: 12px 20px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -348,6 +350,7 @@ onUnmounted(() => {
 
 .suggestion-text {
   font-size: 16px;
+  line-height: 24px;
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
