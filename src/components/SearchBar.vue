@@ -11,10 +11,10 @@
         v-model="query"
         type="text"
         :placeholder="`使用 ${currentEngine.name} 搜索...`"
-        @keydown.enter="handleEnter"
-        @keydown.up.prevent="navigateSuggestions(-1)"
-        @keydown.down.prevent="navigateSuggestions(1)"
-        @keydown.esc="closeSuggestions"
+        @keydown.enter.stop="handleEnter"
+        @keydown.up.prevent.stop="navigateSuggestions(-1)"
+        @keydown.down.prevent.stop="navigateSuggestions(1)"
+        @keydown.esc.stop="closeSuggestions"
         @focus="handleFocus"
         autofocus
         class="custom-search-input"
@@ -266,9 +266,10 @@ onUnmounted(() => {
 
 .search-bar-container.has-suggestions :deep(.base-input-wrapper.focused) {
   box-shadow: none;
-  border-color: transparent;
-} 
-
+  border: 2px solid var(--md-sys-color-primary);
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  padding: 7px 15px 8px 23px;
+}
 /* Override BaseInput generic styles for the specific search bar needs */
 :deep(.base-input-wrapper) {
    padding: 8px 16px 8px 24px;
@@ -282,6 +283,8 @@ onUnmounted(() => {
 :deep(.base-input-wrapper.focused) {
     box-shadow: var(--md-sys-elevation-level3);
     background-color: var(--md-sys-color-surface);
+    border: 2px solid var(--md-sys-color-primary);
+    padding: 7px 15px 7px 23px;
 }
 
 :deep(.base-input-field) {
@@ -319,7 +322,9 @@ onUnmounted(() => {
   overflow: hidden;
   z-index: 20;
   padding: 8px 0;
-  border-top: 1px solid rgba(128, 128, 128, 0.2);
+  border: 2px solid var(--md-sys-color-primary);
+  border-top: none;
+  box-sizing: border-box;
 }
 
 .suggestion-item {

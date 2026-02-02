@@ -227,7 +227,7 @@ function handleShowAll() {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    background: var(--md-sys-color-surface-container);
+    background: var(--md-sys-color-surface);
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--md-sys-color-outline-variant);
