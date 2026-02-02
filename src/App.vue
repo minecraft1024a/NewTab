@@ -1,8 +1,10 @@
 <template>
   <div class="app-container">
+    <LoadingScreen ref="loadingRef" />
+    
     <WallpaperPlayer ref="wallpaperRef" @color-extracted="handleColorExtracted" />
     
-    <div class="content animate-fade-in">
+    <div class="content animate-fade-in" :style="{ opacity: isContentReady ? 1 : 0 }">
       <div class="center-section">
         <SearchBar />
         <div class="spacer-vertical"></div>
@@ -32,16 +34,34 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, defineAsyncComponent } from 'vue';
+import LoadingScreen from './components/LoadingScreen.vue';
 import WallpaperPlayer from './components/WallpaperPlayer.vue';
 import SearchBar from './components/SearchBar.vue';
 import QuickLinks from './components/QuickLinks.vue';
-import Settings from './components/Settings.vue';
 import BaseButton from './components/ui/BaseButton.vue';
 
+// 懒加载Settings组件
+const Settings = defineAsyncComponent(() =>
+  import('./components/Settings.vue')
+);
+
+const loadingRef = ref(null);
 const wallpaperRef = ref(null);
 const settingsRef = ref(null);
 const settingsOpen = ref(false);
+const isContentReady = ref(false);
+
+// 初始化加载
+onMounted(() => {
+  // 立即显示内容
+  isContentReady.value = true;
+  
+  // 下一帧隐藏加载屏幕
+  requestAnimationFrame(() => {
+    loadingRef.value?.hide();
+  });
+});
 
 function triggerWallpaperUpload() {
   wallpaperRef.value?.triggerUpload();
@@ -56,29 +76,24 @@ function closeSettings() {
 }
 
 function handleColorExtracted(colors) {
-  // colors 现在是一个数组
   if (!Array.isArray(colors) || colors.length === 0) return;
   
-  // 保存提取的颜色数组
   localStorage.setItem('extractedThemeColors', JSON.stringify(colors));
   
-  // 更新设置组件中的提取颜色
-  setTimeout(() => {
-    if (settingsRef.value) {
-      settingsRef.value.loadExtractedColors();
-      
-      // 如果设置了自动提取颜色，则应用第一个颜色
-      const settings = localStorage.getItem('appSettings');
-      if (settings) {
-        const parsedSettings = JSON.parse(settings);
-        if (parsedSettings.autoExtractColor) {
-          settingsRef.value.applyThemeColor(colors[0]);
-          parsedSettings.themeColor = 'extracted-0';
-          localStorage.setItem('appSettings', JSON.stringify(parsedSettings));
-        }
+  // 仅在设置组件已加载时更新
+  if (settingsRef.value) {
+    settingsRef.value.loadExtractedColors();
+    
+    const settings = localStorage.getItem('appSettings');
+    if (settings) {
+      const parsedSettings = JSON.parse(settings);
+      if (parsedSettings.autoExtractColor) {
+        settingsRef.value.applyThemeColor(colors[0]);
+        parsedSettings.themeColor = 'extracted-0';
+        localStorage.setItem('appSettings', JSON.stringify(parsedSettings));
       }
     }
-  }, 100);
+  }
 }
 </script>
 
@@ -100,6 +115,7 @@ function handleColorExtracted(colors) {
   z-index: 1;
   padding: 20px;
   padding-top: 30vh; /* 固定顶部距离 */
+  transition: opacity 0.5s ease;
 }
 
 .center-section {
