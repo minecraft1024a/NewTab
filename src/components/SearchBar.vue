@@ -2,7 +2,7 @@
   <div class="search-widget animate-fade-in" v-click-outside="closeSuggestions">
     <!-- Engine Logo -->
     <div class="engine-selector" @click="rotateEngine">
-      <div v-html="currentEngine.svg" class="engine-logo"></div>
+      <Icon :icon="currentEngine.icon" class="engine-logo" width="48" height="48" :color="iconColor" />
     </div>
 
     <!-- Search Input -->
@@ -22,9 +22,7 @@
       >
         <template #append>
            <button class="icon-btn search-icon-btn" @click="performSearch" title="搜索">
-              <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor">
-                <path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/>
-              </svg>
+              <Icon icon="mdi:magnify" width="24" height="24" :color="iconColor" />
            </button>
         </template>
       </BaseInput>
@@ -40,9 +38,7 @@
                @click="selectSuggestion(item)"
                @mouseenter="activeSuggestionIndex = index"
            >
-               <svg class="suggestion-icon" xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
-                 <path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/>
-               </svg>
+               <Icon icon="mdi:magnify" class="suggestion-icon" width="20" height="20" :color="iconColor" />
                <span class="suggestion-text">{{ item }}</span>
            </div>
         </div>
@@ -54,6 +50,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import BaseInput from './ui/BaseInput.vue';
+import { Icon } from '@iconify/vue';
 
 // Custom Directive: v-click-outside
 const vClickOutside = {
@@ -75,28 +72,33 @@ const engineIndex = ref(0);
 const suggestions = ref([]);
 const activeSuggestionIndex = ref(-1);
 const isFocused = ref(false);
+const useThemeColor = ref(true);
 let debounceTimer = null;
 
 const showSuggestions = computed(() => {
     return isFocused.value && suggestions.value.length > 0;
 });
 
-// Basic SVGs for logos
+const iconColor = computed(() => {
+    return useThemeColor.value ? 'var(--md-sys-color-primary)' : 'currentColor';
+});
+
+// 搜索引擎配置，使用 MDI 图标
 const engines = [
   {
     name: 'Google',
     url: 'https://www.google.com/search?q=',
-    svg: `<svg viewBox="0 0 24 24" width="64" height="64"><path fill="#4285F4" d="M23.745 12.27c0-.79-.07-1.54-.19-2.27h-11.3v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z"/><path fill="#34A853" d="M12.255 24c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.43 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96h-3.98v3.09C3.515 21.3 7.565 24 12.255 24z"/><path fill="#FBBC05" d="M5.525 14.29c-.25-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29V6.62h-3.98a11.86 11.86 0 000 10.76l3.98-3.09z"/><path fill="#EA4335" d="M12.255 4.8c1.76 0 3.32.6 4.56 1.8l3.43-3.41C17.95 1.17 15.235 0 12.255 0c-4.69 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z"/></svg>`
+    icon: 'mdi:google'
   },
   {
     name: 'Bing',
     url: 'https://www.bing.com/search?q=',
-    svg: `<svg viewBox="0 0 24 24" width="64" height="64"><path fill="#008373" d="M5,3v18l13-7L9,9L5,3z M11,11l3,2.5L11,15V11z"/></svg>` // Simplified placeholder
+    icon: 'mdi:microsoft-bing'
   },
   {
     name: 'Baidu',
     url: 'https://www.baidu.com/s?wd=',
-    svg: `<svg viewBox="0 0 24 24" width="64" height="64"><path fill="#2932E1" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>` // Simplified placeholder
+    icon: 'mdi:paw' // MDI没有百度图标，使用熊掌代表百度
   }
 ];
 
@@ -205,13 +207,24 @@ function loadEngine() {
   }
 }
 
+function loadIconColorSetting() {
+  const saved = localStorage.getItem('appSettings');
+  if (saved) {
+    const settings = JSON.parse(saved);
+    useThemeColor.value = settings.useThemeColorForIcons !== false;
+  }
+}
+
 onMounted(() => {
   loadEngine();
+  loadIconColorSetting();
   window.addEventListener('engine-changed', loadEngine);
+  window.addEventListener('icon-color-changed', loadIconColorSetting);
 });
 
 onUnmounted(() => {
   window.removeEventListener('engine-changed', loadEngine);
+  window.removeEventListener('icon-color-changed', loadIconColorSetting);
 });
 </script>
 

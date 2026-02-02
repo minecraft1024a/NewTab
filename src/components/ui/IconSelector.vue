@@ -27,7 +27,7 @@
                 placeholder="搜索图标名称..." 
              />
              <div class="icon-preview" v-if="modelValue">
-                <Icon :icon="modelValue" />
+                <Icon :icon="modelValue" :color="iconColor" />
              </div>
         </div>
         
@@ -64,7 +64,7 @@
                     type="button"
                     :title="icon.label"
                 >
-                    <Icon :icon="icon.name" />
+                    <Icon :icon="icon.name" :color="iconColor" />
                 </button>
             </div>
             
@@ -92,7 +92,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseInput from './BaseInput.vue';
 import { getAllIcons, searchIcons, commonIcons as presetIcons } from '@/data/mdi-icons.js';
@@ -110,6 +110,11 @@ const searchQuery = ref('');
 const showAllIcons = ref(false);
 const currentPage = ref(1);
 const pageSize = 100;
+const useThemeColor = ref(true);
+
+const iconColor = computed(() => {
+    return useThemeColor.value ? 'var(--md-sys-color-primary)' : 'currentColor';
+});
 
 // 所有图标数据
 const allIconsData = getAllIcons();
@@ -178,6 +183,23 @@ function handleShowAll() {
   showAllIcons.value = true;
   currentPage.value = 1;
 }
+
+function loadIconColorSetting() {
+  const saved = localStorage.getItem('appSettings');
+  if (saved) {
+    const settings = JSON.parse(saved);
+    useThemeColor.value = settings.useThemeColorForIcons !== false;
+  }
+}
+
+onMounted(() => {
+  loadIconColorSetting();
+  window.addEventListener('icon-color-changed', loadIconColorSetting);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('icon-color-changed', loadIconColorSetting);
+});
 </script>
 
 <style scoped>

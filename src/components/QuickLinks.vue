@@ -24,7 +24,8 @@
             <Icon 
                 v-if="link.icon" 
                 :icon="link.icon" 
-                class="link-icon" 
+                class="link-icon"
+                :color="iconColor"
             />
             <img 
                 v-else
@@ -67,7 +68,8 @@
                 <Icon 
                     v-if="tempLink.icon" 
                     :icon="tempLink.icon" 
-                    class="context-large-icon" 
+                    class="context-large-icon"
+                    :color="iconColor"
                 />
                 <img 
                     v-else
@@ -117,7 +119,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { Icon } from '@iconify/vue';
 import BaseCard from './ui/BaseCard.vue';
 import BaseModal from './ui/BaseModal.vue';
@@ -133,6 +135,11 @@ const isModalOpen = ref(false);
 const newLink = ref({ title: '', url: '' });
 const editMode = ref(false);
 const editIndex = ref(-1);
+const useThemeColor = ref(true);
+
+const iconColor = computed(() => {
+    return useThemeColor.value ? 'var(--md-sys-color-primary)' : 'currentColor';
+});
 
 // Drag and Drop
 const dragIndex = ref(null);
@@ -289,6 +296,14 @@ function loadLinks() {
   }
 }
 
+function loadIconColorSetting() {
+  const saved = localStorage.getItem('appSettings');
+  if (saved) {
+    const settings = JSON.parse(saved);
+    useThemeColor.value = settings.useThemeColorForIcons !== false;
+  }
+}
+
 function saveLinks() {
   localStorage.setItem('quickLinks', JSON.stringify(links.value));
 }
@@ -341,11 +356,14 @@ function handleDocumentClick(event) {
 
 onMounted(() => {
   loadLinks();
+  loadIconColorSetting();
   document.addEventListener('click', handleDocumentClick);
+  window.addEventListener('icon-color-changed', loadIconColorSetting);
 });
 
 onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick);
+  window.removeEventListener('icon-color-changed', loadIconColorSetting);
 });
 </script>
 

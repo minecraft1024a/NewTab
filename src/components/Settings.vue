@@ -77,6 +77,21 @@
         </div>
       </section>
 
+      <!-- 图标设置 -->
+      <section class="settings-section">
+        <h3>图标</h3>
+        <div class="setting-item row-space-between">
+          <div class="setting-text">
+            <label class="setting-label-text">使用主题色渲染图标</label>
+            <p class="setting-description">所有图标将使用当前主题色显示</p>
+          </div>
+          <BaseSwitch 
+            v-model="settings.useThemeColorForIcons"
+            @update:modelValue="updateIconColorSetting"
+          />
+        </div>
+      </section>
+
       <!-- 关于 -->
       <section class="settings-section">
         <h3>关于</h3>
@@ -130,7 +145,8 @@ const settings = ref({
   themeMode: 'auto',
   themeColor: 'purple',
   autoExtractColor: true,
-  defaultEngine: '0'
+  defaultEngine: '0',
+  useThemeColorForIcons: true
 });
 
 function loadSettings() {
@@ -207,6 +223,11 @@ function updateDefaultEngine() {
   localStorage.setItem('defaultEngine', settings.value.defaultEngine);
   saveSettings();
   window.dispatchEvent(new CustomEvent('engine-changed'));
+}
+
+function updateIconColorSetting() {
+  saveSettings();
+  window.dispatchEvent(new CustomEvent('icon-color-changed'));
 }
 
 function applyThemeColor(colorValue) {
