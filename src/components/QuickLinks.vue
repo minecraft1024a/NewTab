@@ -477,6 +477,10 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
+span.link-label{
+      z-index: 999;
+}
+
 .link-label {
   font-size: 13px;
   color: var(--md-sys-color-on-surface);

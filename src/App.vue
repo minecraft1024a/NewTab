@@ -95,11 +95,11 @@ function handleColorExtracted(colors) {
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   position: relative;
   z-index: 1;
   padding: 20px;
+  padding-top: 30vh; /* 固定顶部距离 */
 }
 
 .center-section {
