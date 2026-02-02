@@ -4,6 +4,7 @@
       name="list" 
       tag="div" 
       class="links-grid"
+      :class="{ 'is-dragging-active': isDragging }"
     >
       <BaseCard 
         v-for="(link, index) in links" 
@@ -143,11 +144,13 @@ const iconColor = computed(() => {
 
 // Drag and Drop
 const dragIndex = ref(null);
+const isDragging = ref(false);
 let lastSwapTime = 0;
 
 function handleDragStart(event, index) {
   closeContextMenu();
   dragIndex.value = index;
+  isDragging.value = true;
   // Reduce opacity of the ghost image if supported
   if (event.dataTransfer.setDragImage) {
       // Optional: set a custom drag image or clear it
@@ -172,6 +175,7 @@ function handleDragEnter(index) {
 
 function handleDragEnd() {
   dragIndex.value = null;
+  isDragging.value = false;
   saveLinks();
 }
 
@@ -421,6 +425,19 @@ onUnmounted(() => {
   box-shadow: none;
   background-color: var(--md-sys-color-surface-variant, rgba(255, 255, 255, 0.05)) !important;
   border: 1px dashed rgba(255,255,255,0.3);
+}
+
+/* 禁用拖拽时的所有悬停效果 */
+.links-grid.is-dragging-active .link-card:hover {
+  transform: none !important;
+  background-color: inherit !important;
+  box-shadow: none !important;
+  z-index: auto !important;
+}
+
+.links-grid.is-dragging-active .link-card.is-dragging:hover {
+  opacity: 0.3;
+  transform: scale(0.95) !important;
 }
 
 .link-card:not(.is-dragging):hover {

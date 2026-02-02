@@ -219,8 +219,21 @@ function applyThemeMode() {
   }
   
   // 重新应用当前主题色
-  const currentColor = settings.value.themeColor === 'custom' ? customColor.value : 
-                      presetColors.find(c => c.name === settings.value.themeColor)?.value || '#6750A4';
+  let currentColor = '#6750A4';
+  
+  if (settings.value.themeColor === 'custom') {
+    currentColor = customColor.value;
+  } else if (settings.value.themeColor.startsWith('extracted-')) {
+    // 处理提取的颜色
+    const index = parseInt(settings.value.themeColor.split('-')[1]);
+    if (extractedColors.value[index]) {
+      currentColor = extractedColors.value[index];
+    }
+  } else {
+    // 预设颜色
+    currentColor = presetColors.find(c => c.name === settings.value.themeColor)?.value || '#6750A4';
+  }
+  
   applyThemeColor(currentColor);
 }
 
@@ -315,6 +328,7 @@ if (window.matchMedia) {
 
 onMounted(() => {
   loadSettings();
+  loadExtractedColors();
   
   // 应用初始主题模式和颜色
   applyThemeMode();
