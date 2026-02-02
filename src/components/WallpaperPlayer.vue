@@ -1,5 +1,5 @@
 <template>
-  <div class="wallpaper-container">
+  <div class="wallpaper-container" :style="{ opacity: isWallpaperReady ? 1 : 0 }">
     <video 
       v-if="videoSrc && isVideo" 
       :src="videoSrc" 
@@ -29,11 +29,12 @@
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
 import { openDB } from 'idb';
 
-const emit = defineEmits(['color-extracted']);
+const emit = defineEmits(['color-extracted', 'wallpaper-loaded']);
 
 const videoSrc = ref(null);
 const mimeType = ref('');
 const fileInput = ref(null);
+const isWallpaperReady = ref(false);
 
 const isVideo = computed(() => mimeType.value.startsWith('video/'));
 
@@ -195,9 +196,22 @@ async function loadWallpaper() {
       const file = record instanceof Blob ? record : record.file;
       videoSrc.value = URL.createObjectURL(file);
       mimeType.value = file.type;
+      
+      // 壁纸加载后立即显示，不等待颜色提取
+      setTimeout(() => {
+        isWallpaperReady.value = true;
+        emit('wallpaper-loaded');
+      }, 50);
+    } else {
+      // 如果没有保存的壁纸，直接标记为就绪
+      isWallpaperReady.value = true;
+      emit('wallpaper-loaded');
     }
   } catch (err) {
     console.error('Failed to load wallpaper:', err);
+    // 出错时也标记为就绪
+    isWallpaperReady.value = true;
+    emit('wallpaper-loaded');
   }
 }
 
@@ -281,6 +295,7 @@ watch(videoSrc, () => {
   z-index: -1;
   background: #000;
   overflow: hidden;
+  transition: opacity 0.5s ease;
 }
 
 .wallpaper-media {

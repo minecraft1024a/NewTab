@@ -1,10 +1,7 @@
 <template>
   <div class="app-container">
     
-    <!-- 加载遮罩层 -->
-    <div class="loading-overlay" :class="{ 'fade-out': isContentReady }"></div>
-    
-    <WallpaperPlayer ref="wallpaperRef" @color-extracted="handleColorExtracted" />
+    <WallpaperPlayer ref="wallpaperRef" @color-extracted="handleColorExtracted" @wallpaper-loaded="handleWallpaperLoaded" />
     
     <div class="content animate-fade-in" :style="{ opacity: isContentReady ? 1 : 0 }">
       <div class="center-section">
@@ -54,9 +51,6 @@ onMounted(async () => {
   // 等待 DOM 更新
   await nextTick();
   
-  // 并行初始化设置和壁纸
-  const initPromises = [];
-  
   // 初始化设置组件
   if (settingsRef.value) {
     settingsRef.value.loadSettings();
@@ -64,16 +58,14 @@ onMounted(async () => {
     settingsRef.value.applyThemeMode();
   }
   
-  // 壁纸加载（WallpaperPlayer 在 onMounted 中自动加载）
-  // 等待一小段时间确保壁纸和主题都已加载
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
-  // 显示内容
-  isContentReady.value = true;
-  requestAnimationFrame(() => {
-    loadingRef.value?.hide();
-  });
+  // 壁纸会在 WallpaperPlayer 的 onMounted 中自动加载
+  // 等待 wallpaper-loaded 事件后才显示内容
 });
+
+function handleWallpaperLoaded() {
+  // 壁纸加载完成后显示内容
+  isContentReady.value = true;
+}
 
 function triggerWallpaperUpload() {
   wallpaperRef.value?.triggerUpload();
@@ -163,21 +155,5 @@ function handleColorExtracted(colors) {
 .icon-btn-glass:hover {
     background-color: var(--md-sys-color-surface-container-high, rgba(30, 30, 30, 0.6));
     border-color: rgba(255,255,255,0.2);
-}
-
-.loading-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #141218;
-  z-index: 9999;
-  transition: opacity 0.5s ease;
-  pointer-events: none;
-}
-
-.loading-overlay.fade-out {
-  opacity: 0;
 }
 </style>
